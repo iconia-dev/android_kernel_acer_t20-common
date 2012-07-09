@@ -530,6 +530,43 @@ static struct platform_device *ventana_devices[] __initdata = {
 #endif
 };
 
+#if defined(CONFIG_TOUCHSCREEN_ATMEL_MXT1386)
+static struct i2c_board_info __initdata atmel_mXT1386_i2c_info[] = {
+	{
+		I2C_BOARD_INFO("maXTouch", 0X4C),
+		.irq = TEGRA_GPIO_TO_IRQ(TEGRA_GPIO_PV6),
+	},
+};
+
+static int __init touch_init_atmel_mXT1386(void)
+{
+	int ret;
+
+	tegra_gpio_enable(TEGRA_GPIO_PV6);
+	tegra_gpio_enable(TEGRA_GPIO_PQ7);
+
+	ret = gpio_request(TEGRA_GPIO_PV6, "atmel_maXTouch1386_irq_gpio");
+	if (ret < 0)
+		printk("atmel_maXTouch1386: gpio_request TEGRA_GPIO_PQ6 fail\n");
+
+	ret = gpio_request(TEGRA_GPIO_PQ7, "atmel_maXTouch1386");
+	if (ret < 0)
+		printk("atmel_maXTouch1386: gpio_request fail\n");
+
+	ret = gpio_direction_output(TEGRA_GPIO_PQ7, 0);
+	if (ret < 0)
+		printk("atmel_maXTouch1386: gpio_direction_output fail\n");
+	gpio_set_value(TEGRA_GPIO_PQ7, 0);
+	msleep(1);
+	gpio_set_value(TEGRA_GPIO_PQ7, 1);
+	msleep(100);
+
+	i2c_register_board_info(0, atmel_mXT1386_i2c_info, 1);
+
+	return 0;
+}
+#endif
+
 #if defined(CONFIG_TOUCHSCREEN_ATMEL_768E)
 static struct i2c_board_info __initdata atmel_mXT768e_i2c_info[] = {
 	{
@@ -726,6 +763,9 @@ static void __init acer_t20_init(void)
 	acer_t20_charge_init();
 	acer_t20_regulator_init();
 
+#ifdef CONFIG_TOUCHSCREEN_ATMEL_MXT1386
+	touch_init_atmel_mXT1386();
+#endif
 #ifdef CONFIG_TOUCHSCREEN_ATMEL_768E
 	touch_init_atmel_mXT768e();
 #endif
